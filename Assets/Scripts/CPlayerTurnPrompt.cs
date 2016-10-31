@@ -53,13 +53,14 @@ public class CPlayerTurnPrompt : MonoBehaviour
     public void HidePanel() { StartCoroutine(HidePanelCR()); }
     public IEnumerator HidePanelCR() {
         yield return new WaitForEndOfFrame();
-        //yield return StartCoroutine(FadeOutPanel());
+        uiButton.GetComponent<BoxCollider>().enabled = false;
 
         yield return CGameManager.instance.ChangePlayer_SetNextTurn();
 
         StartCoroutine(CAssessmentPanel.instance.ShowPanel(false));
         yield return CGameManager.instance.BeginNextTurn_CR();
         
+        uiButton.GetComponent<BoxCollider>().enabled = true;
         gameObject.SetActive(false);
     }
 

@@ -91,6 +91,7 @@ public class CCabalManager : MonoBehaviour
             lstHidden[i] = new List<CPeptide>();
 
         // Hold a list of hidden peptides for each player except active player
+        int currIndex = 0;
         for (int i = 0; i < gameMan.Players.Count; ++i)
         {
             if (gameMan.Players[i] == gameMan.activePlayer)
@@ -102,39 +103,15 @@ public class CCabalManager : MonoBehaviour
             {
                 if(gameMan.Players[i].lstRevealedPeptides.Contains(cabalPeptide))
                 {
-
+                    Debug.Log("Contains peptide");
                 }
                 else
                 {
-                    lstHidden[i].Add(cabalPeptide);
+                    lstHidden[currIndex].Add(cabalPeptide);
                 }
             }
 
-
-            //foreach (CPeptide peptide in gameMan.Players[i].lstRevealedPeptides)
-            //{
-            //    bool bFirstCabalFirstPeptide = IsInFirstCabalFirstPeptide(peptide.transform);
-            //    bool bFirstCabalSecondPeptide = IsInFirstCabalSecondPeptide(peptide.transform);
-            //    bool bFirstCabalThirdPeptide = IsInFirstCabalThirdPeptide(peptide.transform);
-            //    bool bSecondCabalFirstPeptide = IsInSecondCabalFirstPeptide(peptide.transform);
-            //    bool bSecondCabalSecondPeptide = IsInSecondCabalSecondPeptide(peptide.transform);
-            //    bool bSecondCabalThirdPeptide = IsInSecondCabalThirdPeptide(peptide.transform);
-            //    bool bThirdCabalFirstPeptide = IsInThirdCabalFirstPeptide(peptide.transform);
-            //    bool bThirdCabalSecondPeptide = IsInThirdCabalSecondPeptide(peptide.transform);
-            //    bool bThirdCabalThirdPeptide = IsInThirdCabalThirdPeptide(peptide.transform);
-
-
-            //    if (bFirstCabalFirstPeptide || bFirstCabalSecondPeptide || bFirstCabalThirdPeptide ||
-            //       bSecondCabalFirstPeptide || bSecondCabalSecondPeptide || bSecondCabalThirdPeptide ||
-            //       bThirdCabalFirstPeptide || bThirdCabalSecondPeptide || bThirdCabalThirdPeptide)
-            //    {
-            //        // revealed, not hidden
-            //    }
-            //    else
-            //    {
-            //        lstHidden[i].Add(peptide);
-            //    }
-            //}
+            currIndex++;
         }
 
         // Get true list of hidden peptides.

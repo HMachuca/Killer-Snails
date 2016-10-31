@@ -203,11 +203,22 @@ public class CPlayer : MonoBehaviour
 
     public CSnailCard GetHibernatingSnail()
     {
+        // Unhibernate snail with most peptides
+
+        CSnailCard snail = null;
+
         foreach (CSnailCard snailCard in snails)
             if (snailCard.fedState == CardData.FedState.Hibernating)
-                return snailCard;
+            {
+                if (snail == null) snail = snailCard;
+                else
+                {
+                    if (snail.lstContainedPeptides.Count < snailCard.lstContainedPeptides.Count)
+                        snail = snailCard;
+                }
+            }
 
-        return null;
+        return snail;
     }
 
     #endregion

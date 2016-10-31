@@ -24,6 +24,7 @@ public class CMainMenu : MonoBehaviour
     public GameObject goMainMenuObjs;       // Contains all gameobjects
     public UISprite uiPlayBttn, uiEventsBttn, uiOptionsBttn;
     public UIButton play2, play3, play4;
+    public UIButton uiMultiplayerBttn, uiPlayComputerBttn;
 
     public float fFadingAlphaDuration;
 
@@ -111,6 +112,8 @@ public class CMainMenu : MonoBehaviour
     public void StartTutorial() { StartCoroutine(StartTutorial_CR()); }
     private IEnumerator StartTutorial_CR()
     {
+        uiEventsBttn.GetComponent<BoxCollider>().enabled = false;
+
         //goTutorialDirector.SetActive(true);
         //UserSettings.NumberOfPlayers = 4;
         //CGlobals.TUTORIAL_ACTIVE = true;
@@ -118,6 +121,8 @@ public class CMainMenu : MonoBehaviour
         yield return FadeOutButtonUIPanel();
         yield return FadeInTutorialPanel();
         CurrentPanel = MM_PANELS.Tutorial;
+
+        uiEventsBttn.GetComponent<BoxCollider>().enabled = true;
     }
 
     private IEnumerator StartGame()
@@ -140,9 +145,13 @@ public class CMainMenu : MonoBehaviour
     public void OnPlayButton_Clicked() { StartCoroutine(OnPlayButton_ClickedCR()); }
     public IEnumerator OnPlayButton_ClickedCR()
     {
+        uiPlayBttn.GetComponent<BoxCollider>().enabled = false;
+
         yield return StartCoroutine(FadeOutButtonUIPanel());
         yield return StartCoroutine(FadeInPlayModePanel());
         CurrentPanel = MM_PANELS.PlayMode;
+
+        uiPlayBttn.GetComponent<BoxCollider>().enabled = true;
     }
 
     public void OnEventsButton_Clicked()
@@ -153,9 +162,13 @@ public class CMainMenu : MonoBehaviour
     public void OnOptionsButton_Clicked() { StartCoroutine(OnOptionsButton_ClickedCR()); }
     public IEnumerator OnOptionsButton_ClickedCR()
     {
+        uiOptionsBttn.GetComponent<BoxCollider>().enabled = false;
+
         yield return StartCoroutine(FadeOutButtonUIPanel());
         yield return StartCoroutine(FadeInOptionsPanel());
         CurrentPanel = MM_PANELS.Options;
+
+        uiOptionsBttn.GetComponent<BoxCollider>().enabled = true;
     }
 
     public void OnOptionsBackButton_Clicked() { StartCoroutine(OnOptionsBackButton_ClickedCR()); }
@@ -171,19 +184,26 @@ public class CMainMenu : MonoBehaviour
     public void OnSelectPlayVSComputer_Clicked() { StartCoroutine(OnSelectPlayVSComputer_ClickedCR()); }
     public IEnumerator OnSelectPlayVSComputer_ClickedCR()
     {
+        uiMultiplayerBttn.GetComponent<BoxCollider>().enabled = false;
         CGlobals.PLAY_VS_COMPUTER = true;
 
         yield return StartCoroutine(FadeOutPlayModePanel());
         yield return StartCoroutine(FadeInPlayersSelectUIPanel());
         CurrentPanel = MM_PANELS.PlayerSelect;
+
+        uiMultiplayerBttn.GetComponent<BoxCollider>().enabled = true;
     }
 
     public void OnSelectMultiplayerButton_Clicked() { StartCoroutine(OnSelectMultiplayerButton_ClickedCR()); }
     public IEnumerator OnSelectMultiplayerButton_ClickedCR()
     {
+        uiMultiplayerBttn.GetComponent<BoxCollider>().enabled = false;
+
         yield return StartCoroutine(FadeOutPlayModePanel());
         yield return StartCoroutine(FadeInPlayersSelectUIPanel());
         CurrentPanel = MM_PANELS.PlayerSelect;
+
+        uiMultiplayerBttn.GetComponent<BoxCollider>().enabled = true;
     }
 
     // Tutorial
@@ -305,27 +325,39 @@ public class CMainMenu : MonoBehaviour
     public IEnumerator SetNumberOfPlayers_2CR()
     {
         yield return new WaitForEndOfFrame();
+        play2.GetComponent<BoxCollider>().enabled = false;
+
         UserSettings.NumberOfPlayers = 2;
-        play2.enabled = false;
-        StartCoroutine(StartGame());
+        //play2.enabled = false;
+        yield return StartGame();
+
+        play2.GetComponent<BoxCollider>().enabled = true;
     }
 
     public void SetNumberOfPlayers_3() { StartCoroutine(SetNumberOfPlayers_3CR()); }
     public IEnumerator SetNumberOfPlayers_3CR()
     {
         yield return new WaitForEndOfFrame();
+        play3.GetComponent<BoxCollider>().enabled = false;
+
         UserSettings.NumberOfPlayers = 3;
         play3.enabled = false;
-        StartCoroutine(StartGame());
+        yield return StartGame();
+
+        play3.GetComponent<BoxCollider>().enabled = true;
     }
 
     public void SetNumberOfPlayers_4() { StartCoroutine(SetNumberOfPlayers_4CR()); }
     public IEnumerator SetNumberOfPlayers_4CR()
     {
         yield return new WaitForEndOfFrame();
+        play4.GetComponent<BoxCollider>().enabled = false;
+
         UserSettings.NumberOfPlayers = 4;
         play4.enabled = false;
-        StartCoroutine(StartGame());
+        yield return StartGame();
+
+        play4.GetComponent<BoxCollider>().enabled = true;
     }
 
     public void ToggleMusic()

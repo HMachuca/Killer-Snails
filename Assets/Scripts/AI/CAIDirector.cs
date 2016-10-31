@@ -26,7 +26,6 @@ public class CAIDirector : MonoBehaviour
 
         FeedSnail_WithPeptides,
         FeedSnail_ZeroPeptides,
-        FeedSnail,
 
         UnhibernateSnail,
 
@@ -41,7 +40,8 @@ public class CAIDirector : MonoBehaviour
     public ACTIONS FinalDecision;
 
     // Action Variables
-    public CSnailCard snailCardToPlay, snailCardToFeed;
+    public CSnailCard snailCardToPlay, snailCardToFeedWithPeptides, snailCardToFeedWithoutPeptides, snailCardToUnhibernate;
+    public CPreyCard preyCardToEat;
     public CInstantCard instantCardToPlay;
     public List<CPeptide> lstHiddenPeptides; // of current player
 
@@ -92,7 +92,11 @@ public class CAIDirector : MonoBehaviour
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.P))
+        {
             WeighNextAction();
+            FinalDecision = GetHighestFrequencyAction();
+            StartCoroutine(RunAction());
+        }
     }
 
 
@@ -144,7 +148,7 @@ public class CAIDirector : MonoBehaviour
 
             // e.  If the AI has no snails in play, give it two points to the PLAY A SNAIL action. If it has a snail in play, and it has a prey it 
             //     can kill with a snail in the hand based on type, give it two points to FEED THAT SNAIL.
-            SetValue_PlayOrFeedSnailCard();
+            SetValue_PlaySnailCard();
 
             // f. BUYING A MARKET CARD always gets two points if the AI can afford something in the market.
             SetValue_BuyMarketCard();
@@ -177,8 +181,10 @@ public class CAIDirector : MonoBehaviour
     private void SetValue_FeedUnfedSnailCardWithPeptides()
     {
         CSnailCard snailCardWithPeptides = CGameManager.instance.activePlayer.HasSnailWithPeptides();
-        if (snailCardWithPeptides && snailCardWithPeptides.fedState == CardData.FedState.Unfed)
+        if (snailCardWithPeptides && snailCardWithPeptides.fedState == CardData.FedState.Unfed) {
+            snailCardToFeedWithPeptides = snailCardWithPeptides;
             SetFrequencyValue(ACTIONS.FeedSnail_WithPeptides, 3 * snailCardWithPeptides.lstContainedPeptides.Count);
+        }
     }
 
     // b.
@@ -227,6 +233,7 @@ public class CAIDirector : MonoBehaviour
         int leadingPlayerIndex = 0;
         int amtOfPeptides = 0;
 
+        // Get currently winning player
         for(int i = 0; i < gameMan.Players.Count; ++i)
         {
             if (gameMan.Players[i] == gameMan.activePlayer)
@@ -242,14 +249,24 @@ public class CAIDirector : MonoBehaviour
             }
         }
 
+        // give the USE PREDATOR action 1 point for the every peptide the leading player (if not the AI) has
         leadingPlayer = gameMan.Players[leadingPlayerIndex];
 
-        foreach(CBaseCard handCard in CGameManager.instance.activePlayer.hand)
+        if (leadingPlayer == gameMan.activePlayer)
         {
-            if(handCard.cardType == CardData.CardType.Instant) {
-                if(((CInstantCard)handCard).predator) {
-                    SetFrequencyValue(ACTIONS.UsePredator, amtOfPeptides);
-                    break;
+            SetFrequencyValue(ACTIONS.UsePredator, 0);
+        }
+        else
+        {
+            foreach(CBaseCard handCard in gameMan.activePlayer.hand) {
+                if(handCard.cardType == CardData.CardType.Instant) {
+                    CInstantCard instant = (CInstantCard)handCard;
+
+                    // TODO: Need logic to differentiate between Turtle and other predator cards
+                    if(instant.predator) {
+                        SetFrequencyValue(ACTIONS.UsePredator, amtOfPeptides);
+                        break;
+                    }
                 }
             }
         }
@@ -258,13 +275,21 @@ public class CAIDirector : MonoBehaviour
     // d.
     private void SetValue_UnhibernateSnailCard()
     {
-        CSnailCard hibernatingSnail = CGameManager.instance.activePlayer.GetHibernatingSnail();
-        if(hibernatingSnail)
+        if (CGameManager.instance.activePlayer.hand.Count == 0) {
+            SetFrequencyValue(ACTIONS.UnhibernateSnail, 0);
+            return;
+        }
+
+        snailCardToUnhibernate = CGameManager.instance.activePlayer.GetHibernatingSnail();
+
+        if (snailCardToUnhibernate)
             SetFrequencyValue(ACTIONS.UnhibernateSnail, 2);
+        else
+            SetFrequencyValue(ACTIONS.UnhibernateSnail, 0);
     }
 
     // e.
-    private void SetValue_PlayOrFeedSnailCard()
+    private void SetValue_PlaySnailCard()
     {
         CPlayer currentPlayer = CGameManager.instance.activePlayer;
 
@@ -282,17 +307,19 @@ public class CAIDirector : MonoBehaviour
         }
         else
         {
-            // else, feed a snail
+            // else if there are snails in play and a snail in the player's hand can eat a prey, play that snail card.
             foreach (CSnailCard snailCard in currentPlayer.snails)
             {
                 foreach (CPreyCard preyCard in currentPlayer.prey) {
                     if (preyCard.preyName != CardData.PreyName.Basic_Prey) {
-                        if (snailCard.preyType == CardData.PreyType.All || snailCard.preyType == preyCard.preyType) {
-                            //Debug.Log(currentPlayer.hand.Count);
-                            if (snailCard.strength + currentPlayer.hand.Count >= preyCard.resistance) {
-                                snailCardToFeed = snailCard;
-                                SetFrequencyValue(ACTIONS.FeedSnail, 2);
-                                break;
+                        if(snailCard.fedState == CardData.FedState.Unfed) {
+                            if (snailCard.preyType == CardData.PreyType.All || snailCard.preyType == preyCard.preyType) {
+                                //Debug.Log(currentPlayer.hand.Count);
+                                if (snailCard.strength + currentPlayer.hand.Count >= preyCard.resistance) {
+                                    //snailCardToFeed = snailCard;
+                                    SetFrequencyValue(ACTIONS.PlaySnail, 2);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -320,8 +347,10 @@ public class CAIDirector : MonoBehaviour
     private void SetValue_FeedUnfedSnailCardWithZeroPeptides()
     {
         CSnailCard snailCardWithZeroPeptides = CGameManager.instance.activePlayer.HasSnailWithZeroPeptides();
-        if (snailCardWithZeroPeptides && snailCardWithZeroPeptides.fedState == CardData.FedState.Unfed)
+        if (snailCardWithZeroPeptides && snailCardWithZeroPeptides.fedState == CardData.FedState.Unfed) {
+            snailCardToFeedWithoutPeptides = snailCardWithZeroPeptides;
             SetFrequencyValue(ACTIONS.FeedSnail_ZeroPeptides, 1);
+        }
     }
 
     #endregion
@@ -338,7 +367,7 @@ public class CAIDirector : MonoBehaviour
             case ACTIONS.UseInstant_Research: yield return RunAction_UseInstantResearchCard();
                 break;
 
-            case ACTIONS.UsePredator:
+            case ACTIONS.UsePredator: 
                 break;
 
             case ACTIONS.PlaySnail: yield return RunAction_PlaySnail();
@@ -350,7 +379,7 @@ public class CAIDirector : MonoBehaviour
             case ACTIONS.FeedSnail_ZeroPeptides:
                 break;
 
-            case ACTIONS.UnhibernateSnail:
+            case ACTIONS.UnhibernateSnail: yield return RunAction_UnhibernateSnail();
                 break;
 
             case ACTIONS.BuyFromMarket: yield return RunAction_BuyFromMarket();
@@ -474,7 +503,44 @@ public class CAIDirector : MonoBehaviour
     public IEnumerator RunAction_FeedSnail_ZeroPeptides()
     {
         yield return new WaitForEndOfFrame();
+        //CPlayer currentPlayer = CGameManager.instance.activePlayer;
+        //preyCardToEat = null;
 
+        //foreach (CSnailCard snailCard in currentPlayer.snails)
+        //{
+        //    foreach (CPreyCard preyCard in currentPlayer.prey) {
+        //        if (preyCard.preyName != CardData.PreyName.Basic_Prey) {
+        //            if(snailCard.fedState == CardData.FedState.Unfed) {
+        //                if (snailCard.preyType == CardData.PreyType.All || snailCard.preyType == preyCard.preyType) {
+        //                    if (snailCard.strength + currentPlayer.hand.Count >= preyCard.resistance) {
+        //                        preyCardToEat = preyCard;
+        //                        break;
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
+
+        ////if(preyCardToEat == null)
+        ////{
+
+        ////}
+
+
+
+
+
+        //// Feed Snail Card
+        //yield return CUIManager.instance.MoveCardToActionPanel_CR(snailCardToFeedWithoutPeptides);
+        //yield return new WaitForSeconds(1f);
+
+        //yield return CUIManager.instance.actionPanel.CR_FeedCard();
+        //yield return new WaitForSeconds(1f);
+
+        // Choose Prey
+
+        //yield return CUIManager.instance.actionPanel.ActionEndPrompt.MovePreyCardToPanel
     }
 
     public IEnumerator RunAction_PlaySnail()
@@ -529,10 +595,29 @@ public class CAIDirector : MonoBehaviour
         yield return new WaitForSeconds(1f);
     }
 
+
     public IEnumerator RunAction_UnhibernateSnail()
     {
         yield return new WaitForEndOfFrame();
+        CUIManager uiManager = CUIManager.instance;
 
+        yield return CUIManager.instance.MoveCardToActionPanel_CR(snailCardToUnhibernate);
+        yield return new WaitForSeconds(1f);
+
+        uiManager.actionPanel.UnhibernateButton();
+        yield return new WaitForSeconds(1f);
+
+
+        CBaseCard discard = null;
+
+        if (CGameManager.instance.activePlayer.hand.Count > 0)
+            discard = CGameManager.instance.activePlayer.hand[0];
+
+        discard.SelectedCardToUnhibernateSnail();
+        yield return new WaitForSeconds(1.0f);
+
+        uiManager.actionPanel.UnhibernateSnail();
+        yield return new WaitForSeconds(2.0f);
     }
 
     public IEnumerator RunAction_UseInstantResearchCard()
