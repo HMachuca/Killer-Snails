@@ -364,25 +364,31 @@ public class CAIDirector : MonoBehaviour
 
         switch(FinalDecision)
         {
-            case ACTIONS.UseInstant_Research: yield return RunAction_UseInstantResearchCard();
+            case ACTIONS.UseInstant_Research:
+                yield return RunAction_UseInstantResearchCard();
                 break;
 
             case ACTIONS.UsePredator: 
                 break;
 
-            case ACTIONS.PlaySnail: yield return RunAction_PlaySnail();
+            case ACTIONS.PlaySnail:
+                yield return RunAction_PlaySnail();
                 break;
 
             case ACTIONS.FeedSnail_WithPeptides:
+                yield return RunAction_FeedSnail(snailCardToFeedWithPeptides);
                 break;
 
             case ACTIONS.FeedSnail_ZeroPeptides:
+                yield return RunAction_FeedSnail(snailCardToFeedWithoutPeptides);
                 break;
 
-            case ACTIONS.UnhibernateSnail: yield return RunAction_UnhibernateSnail();
+            case ACTIONS.UnhibernateSnail:
+                yield return RunAction_UnhibernateSnail();
                 break;
 
-            case ACTIONS.BuyFromMarket: yield return RunAction_BuyFromMarket();
+            case ACTIONS.BuyFromMarket:
+                yield return RunAction_BuyFromMarket();
                 break;
         }
     }
@@ -488,9 +494,36 @@ public class CAIDirector : MonoBehaviour
         }
     }
 
-    public IEnumerator RunAction_FeedSnail()
+    public IEnumerator RunAction_FeedSnail(CSnailCard snailCardToFeed)
     {
         yield return new WaitForEndOfFrame();
+
+        CPlayer currentPlayer = CGameManager.instance.activePlayer;
+        preyCardToEat = null;
+
+        // Check if any prey match our snail
+        foreach (CPreyCard preyCard in currentPlayer.prey)
+        {
+            if (preyCard.preyName != CardData.PreyName.Basic_Prey)
+            {
+                if (snailCardToFeed.fedState == CardData.FedState.Unfed)
+                {
+                    if (snailCardToFeed.preyType == CardData.PreyType.All || snailCardToFeed.preyType == preyCard.preyType)
+                    {
+                        if (snailCardToFeed.strength + currentPlayer.hand.Count >= preyCard.resistance)
+                        {
+                            preyCardToEat = preyCard;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (preyCardToEat == null)
+        {
+
+        }
 
     }
 
@@ -503,6 +536,10 @@ public class CAIDirector : MonoBehaviour
     public IEnumerator RunAction_FeedSnail_ZeroPeptides()
     {
         yield return new WaitForEndOfFrame();
+
+
+
+
         //CPlayer currentPlayer = CGameManager.instance.activePlayer;
         //preyCardToEat = null;
 
